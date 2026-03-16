@@ -1,4 +1,5 @@
 -- CLEAN SLATE SCRIPT (Resets everything)
+-- Use CASCADE to ensure related policies and objects are also removed
 DROP TABLE IF EXISTS clients CASCADE;
 
 CREATE TABLE clients (
@@ -18,6 +19,9 @@ CREATE TABLE clients (
 -- ENABLE ROW LEVEL SECURITY
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICIES
+-- CREATE POLICIES (Explicitly drop first just in case CASCADE didn't clear them from memory)
+DROP POLICY IF EXISTS "Enable read access for all users" ON clients;
+DROP POLICY IF EXISTS "Enable insert access for all users" ON clients;
+
 CREATE POLICY "Enable read access for all users" ON clients FOR SELECT USING (true);
 CREATE POLICY "Enable insert access for all users" ON clients FOR INSERT WITH CHECK (true);
