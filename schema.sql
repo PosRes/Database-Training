@@ -11,3 +11,17 @@ CREATE TABLE IF NOT EXISTS clients (
   categories_1 TEXT,
   categories_2 TEXT
 );
+
+-- ENABLE ROW LEVEL SECURITY
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+
+-- CREATE POLICY: Allow everyone to read data
+CREATE POLICY "Enable read access for all users" 
+ON clients FOR SELECT 
+USING (true);
+
+-- CREATE POLICY: Allow everyone to insert data
+-- NOTE: In a production app, you would want to restrict this.
+CREATE POLICY "Enable insert access for all users" 
+ON clients FOR INSERT 
+WITH CHECK (true);
