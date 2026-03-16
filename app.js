@@ -33,17 +33,19 @@ async function fetchClients() {
         allClients = data || [];
         
         if (allClients.length === 0) {
-            loader.innerHTML = `<p style="color: var(--text-muted)">No data found. Please import the CSV to Supabase.</p>`;
+            loader.innerHTML = `<p style="color: var(--text-muted); text-align: center; width: 100%;">No data found in Cloud. Please import data to Supabase.</p>`;
         } else {
             renderTable(allClients);
             updateStats(allClients);
             loader.style.display = 'none';
         }
-    } catch (error) {
-        console.error('Error:', error);
+    } catch (err) {
+        console.error('Fetch error:', err);
         loader.innerHTML = `
-            <p style="color: #ef4444">Connection Failed.</p>
-            <p style="font-size: 0.8rem; margin-top: 10px;">Make sure the 'clients' table exists and Policies are set to Public.</p>
+            <div style="text-align: center; color: #ef4444;">
+                <p>Connection to Cloud Failed.</p>
+                <p style="font-size: 0.8rem; margin-top: 8px; opacity: 0.7;">Check Supabase Policies or Table name.</p>
+            </div>
         `;
     }
 }
