@@ -1,7 +1,8 @@
 const SUPABASE_URL = 'https://sjbunfizoblfqyepnepw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqYnVuZml6b2JsZnF5ZXBuZXB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTk0MDQsImV4cCI6MjA4OTIzNTQwNH0.8cFfp4F-oVlB5nq2BHI0Q3lI4F-IwwBbUeS1xcRoexA';
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Fix shadowing: rename local instance to _supabase
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const clientTableBody = document.getElementById('clientTableBody');
 const searchInput = document.getElementById('searchInput');
@@ -21,21 +22,30 @@ async function fetchClients() {
     loader.style.display = 'flex';
     clientTableBody.innerHTML = '';
     
-    const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('nama_institusi', { ascending: true });
+    try {
+        const { data, error } = await _supabase
+            .from('clients')
+            .select('*')
+            .order('nama_institusi', { ascending: true });
 
-    if (error) {
-        console.error('Error fetching clients:', error);
-        loader.innerHTML = `<p style="color: #ef4444">Error loading data. Check Supabase connection.</p>`;
-        return;
+        if (error) throw error;
+
+        allClients = data || [];
+        
+        if (allClients.length === 0) {
+            loader.innerHTML = `<p style="color: var(--text-muted)">No data found. Please import the CSV to Supabase.</p>`;
+        } else {
+            renderTable(allClients);
+            updateStats(allClients);
+            loader.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        loader.innerHTML = `
+            <p style="color: #ef4444">Connection Failed.</p>
+            <p style="font-size: 0.8rem; margin-top: 10px;">Make sure the 'clients' table exists and Policies are set to Public.</p>
+        `;
     }
-
-    allClients = data;
-    renderTable(allClients);
-    updateStats(allClients);
-    loader.style.display = 'none';
 }
 
 function renderTable(clients) {
