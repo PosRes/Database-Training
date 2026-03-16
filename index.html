@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ILI Client Database | Training</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <header>
+            <div class="logo-section">
+                <h1>ILI Client <span>Database</span></h1>
+                <p class="subtitle">Secure Data Portal & Training Hub</p>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by name, city, or category...">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+        </header>
+
+        <main>
+            <div class="stats-glass">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalCount">0</span>
+                    <span class="stat-label">Total Clients</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="activeRegions">0</span>
+                    <span class="stat-label">Regions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">Cloud</span>
+                    <span class="stat-label">Database Status</span>
+                </div>
+            </div>
+
+            <div class="table-container glass">
+                <table id="clientTable">
+                    <thead>
+                        <tr>
+                            <th>Institusi</th>
+                            <th>Kota</th>
+                            <th>Provinsi</th>
+                            <th>Kategori</th>
+                            <th>CP / Telepon</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientTableBody">
+                        <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+                <div id="loader" class="loader-container">
+                    <div class="spinner"></div>
+                    <p>Fetching encrypted data...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 ILI Training Systems. Confidential Information.</p>
+        </footer>
+    </div>
+
+    <!-- Modal for details -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content glass">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle">Client Details</h2>
+            <div id="modalBody" class="modal-grid">
+                <!-- Details will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
