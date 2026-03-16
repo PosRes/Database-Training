@@ -25,8 +25,17 @@ form.addEventListener('submit', async (e) => {
         alert('Client added successfully!');
         window.location.href = 'index.html';
     } catch (error) {
-        console.error('Error adding client:', error);
-        alert('Error: ' + error.message);
+        console.error('Submission error:', error);
+        
+        // Provide much clearer feedback to the user
+        let message = error.message || 'Unknown error';
+        if (message.includes('403') || message.includes('row-level security')) {
+            message = "Permission Denied (RLS). Please check your Supabase 'INSERT' policies.";
+        } else if (message.includes('404') || message.includes('relation "clients" does not exist')) {
+            message = "Table 'clients' not found. Did you run the SQL in Supabase?";
+        }
+
+        alert('❌ Error: ' + message);
         submitBtn.innerText = 'Register Client';
         submitBtn.disabled = false;
     }
