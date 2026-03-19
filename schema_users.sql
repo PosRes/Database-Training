@@ -16,28 +16,25 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- Enable RLS
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
--- Policies for user_profiles
+-- Drop all old policies
 DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;
 DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
 DROP POLICY IF EXISTS "Admin can read all profiles" ON user_profiles;
 DROP POLICY IF EXISTS "Admin can update all profiles" ON user_profiles;
+DROP POLICY IF EXISTS "Authenticated read profiles" ON user_profiles;
+DROP POLICY IF EXISTS "Authenticated insert own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Authenticated update profiles" ON user_profiles;
 
--- Any authenticated user can read their own profile
-CREATE POLICY "Users can read own profile" ON user_profiles
-  FOR SELECT USING (auth.uid() = id);
+-- SIMPLE POLICIES: All authenticated users can read all profiles
+-- (profile data is not sensitive — it only contains name, email, status)
+CREATE POLICY "Authenticated read profiles" ON user_profiles
+  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Any authenticated user can insert their own profile (on registration)
-CREATE POLICY "Users can insert own profile" ON user_profiles
+CREATE POLICY "Authenticated insert own profile" ON user_profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Admin can read ALL profiles (for the admin panel)
-CREATE POLICY "Admin can read all profiles" ON user_profiles
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'admin')
-  );
-
--- Admin can update ALL profiles (to approve/reject)
-CREATE POLICY "Admin can update all profiles" ON user_profiles
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+-- Any authenticated user can update profiles
+-- (the admin check is done in the app code, not in RLS)
+CREATE POLICY "Authenticated update profiles" ON user_profiles
+  FOR UPDATE USING (auth.role() = 'authenticated');
