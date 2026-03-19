@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | ILI Database</title>
+    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .login-box h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .login-box .subtitle {
+            margin-bottom: 2.5rem;
+        }
+        .login-box .form-group {
+            text-align: left;
+            margin-bottom: 1.2rem;
+        }
+        .login-box .form-group input {
+            width: 100%;
+        }
+        .login-error {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            min-height: 1.2em;
+        }
+        .login-footer {
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="login-wrapper">
+        <div class="login-box glass">
+            <h1>ILI Client <span style="color: var(--primary);">Database</span></h1>
+            <p class="subtitle">Sign in to access the portal</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter your password">
+                </div>
+                <button type="submit" id="loginBtn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+                <p class="login-error" id="loginError"></p>
+            </form>
+            
+            <p class="login-footer">&copy; 2026 By Kaisar Akhmad K.</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://sjbunfizoblfqyepnepw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqYnVuZml6b2JsZnF5ZXBuZXB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTk0MDQsImV4cCI6MjA4OTIzNTQwNH0.8cFfp4F-oVlB5nq2BHI0Q3lI4F-IwwBbUeS1xcRoexA';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // If already logged in, go to dashboard
+        _supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) window.location.href = 'index.html';
+        });
+
+        const form = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginBtn.innerText = 'Signing in...';
+            loginBtn.disabled = true;
+            loginError.innerText = '';
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                loginError.innerText = error.message;
+                loginBtn.innerText = 'Sign In';
+                loginBtn.disabled = false;
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

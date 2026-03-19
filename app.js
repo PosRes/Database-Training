@@ -1,8 +1,4 @@
-const SUPABASE_URL = 'https://sjbunfizoblfqyepnepw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqYnVuZml6b2JsZnF5ZXBuZXB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTk0MDQsImV4cCI6MjA4OTIzNTQwNH0.8cFfp4F-oVlB5nq2BHI0Q3lI4F-IwwBbUeS1xcRoexA';
-
-// Fix shadowing: rename local instance to _supabase
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// _supabase and requireAuth() are provided by auth.js (loaded first)
 
 const clientTableBody = document.getElementById('clientTableBody');
 const searchInput = document.getElementById('searchInput');
@@ -150,5 +146,7 @@ window.showDetails = (id) => {
 closeBtn.onclick = () => modal.style.display = 'none';
 window.onclick = (event) => { if (event.target === modal) modal.style.display = 'none'; };
 
-// Initial load
-fetchClients();
+// Initial load — require auth first
+requireAuth().then(session => {
+    if (session) fetchClients();
+});
