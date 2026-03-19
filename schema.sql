@@ -23,7 +23,15 @@ DROP POLICY IF EXISTS "Enable read access for all users" ON clients;
 DROP POLICY IF EXISTS "Enable insert access for all users" ON clients;
 DROP POLICY IF EXISTS "Enable update access for all users" ON clients;
 
--- Only authenticated users can read, insert, and update
-CREATE POLICY "Enable read access for all users" ON clients FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable insert access for all users" ON clients FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Enable update access for all users" ON clients FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+-- Only APPROVED users can read, insert, and update
+CREATE POLICY "Enable read access for all users" ON clients FOR SELECT USING (
+  EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND status = 'approved')
+);
+CREATE POLICY "Enable insert access for all users" ON clients FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND status = 'approved')
+);
+CREATE POLICY "Enable update access for all users" ON clients FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND status = 'approved')
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND status = 'approved')
+);

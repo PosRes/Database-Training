@@ -38,3 +38,23 @@ CREATE POLICY "Authenticated insert own profile" ON user_profiles
 -- (the admin check is done in the app code, not in RLS)
 CREATE POLICY "Authenticated update profiles" ON user_profiles
   FOR UPDATE USING (auth.role() = 'authenticated');
+
+
+-- =====================================================
+-- AUTOMATIC PROFILE CREATION TRIGGER
+-- =====================================================
+-- This creates a row in user_profiles automatically whenever someone signs up!
+
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, email, full_name, status, role)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', 'pending', 'user');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

@@ -101,18 +101,9 @@
                 return;
             }
 
-            // After signup, sign in to create the profile row
-            const { error: signInError } = await _supabase.auth.signInWithPassword({ email, password });
-            if (!signInError) {
-                // Insert profile with 'pending' status
-                await _supabase.from('user_profiles').insert([{
-                    id: data.user.id,
-                    email: email,
-                    full_name: fullName,
-                    status: 'pending'
-                }]);
-                await _supabase.auth.signOut();
-            }
+            // The Postgres Database trigger (handle_new_user) will auto-create the profile!
+            // Just force a sign-out immediately so they don't have active unapproved sessions.
+            await _supabase.auth.signOut();
 
             regSuccess.innerText = '✅ Registration submitted! Please wait for admin approval before logging in.';
             regBtn.innerText = 'Register';
