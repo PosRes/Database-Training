@@ -78,7 +78,7 @@ async function fetchClients() {
 }
 
 function renderTable(clients) {
-    clientTableBody.innerHTML = '';
+    const fragment = document.createDocumentFragment();
     clients.forEach(client => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -90,10 +90,15 @@ function renderTable(clients) {
                 ${client.categories_2 ? `<span class="badge badge-secondary" style="margin-left:5px; opacity:0.8; font-size:0.8em; border:1px solid var(--glass-border); padding:2px 6px; border-radius:4px;">${client.categories_2}</span>` : ''}
             </td>
             <td>${client.cp || '-'} / ${client.no_telepon || '-'}</td>
-            <td><button class="btn-detail" onclick="showDetails(${client.id})">View</button></td>
+            <td class="action-buttons">
+                <a href="edit-client.html?id=${client.id}" class="btn-edit" title="Edit">✏️</a>
+                <button class="btn-detail" onclick="showDetails(${client.id})">View</button>
+            </td>
         `;
-        clientTableBody.appendChild(row);
+        fragment.appendChild(row);
     });
+    clientTableBody.innerHTML = '';
+    clientTableBody.appendChild(fragment);
 }
 
 function updateStats(totalCount) {
@@ -103,18 +108,27 @@ function updateStats(totalCount) {
     activeRegionsEl.innerText = regions;
 }
 
+// Debounced search — waits 250ms after you stop typing before filtering
+let searchTimer;
 searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = allClients.filter(c => 
-        (c.nama_institusi && c.nama_institusi.toLowerCase().includes(term)) ||
-        (c.kota && c.kota.toLowerCase().includes(term)) ||
-        (c.provinsi && c.provinsi.toLowerCase().includes(term)) ||
-        (c.categories_1 && c.categories_1.toLowerCase().includes(term)) ||
-        (c.categories_2 && c.categories_2.toLowerCase().includes(term)) ||
-        (c.cp && c.cp.toLowerCase().includes(term)) ||
-        (c.no_telepon && c.no_telepon.toLowerCase().includes(term))
-    );
-    renderTable(filtered);
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        const term = e.target.value.toLowerCase();
+        if (!term) {
+            renderTable(allClients);
+            return;
+        }
+        const filtered = allClients.filter(c => 
+            (c.nama_institusi && c.nama_institusi.toLowerCase().includes(term)) ||
+            (c.kota && c.kota.toLowerCase().includes(term)) ||
+            (c.provinsi && c.provinsi.toLowerCase().includes(term)) ||
+            (c.categories_1 && c.categories_1.toLowerCase().includes(term)) ||
+            (c.categories_2 && c.categories_2.toLowerCase().includes(term)) ||
+            (c.cp && c.cp.toLowerCase().includes(term)) ||
+            (c.no_telepon && c.no_telepon.toLowerCase().includes(term))
+        );
+        renderTable(filtered);
+    }, 250);
 });
 
 window.showDetails = (id) => {

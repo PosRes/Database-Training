@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Client | ILI Database</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <header>
+            <div class="logo-section">
+                <h1>Edit <span>Client</span></h1>
+                <p class="subtitle" id="editSubtitle">Loading client data...</p>
+            </div>
+            <a href="index.html" class="btn-secondary">Back to Dashboard</a>
+        </header>
+
+        <main>
+            <div class="form-container glass">
+                <form id="editClientForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nama Institusi</label>
+                            <input type="text" name="nama_institusi" id="f_nama_institusi" placeholder="e.g. PT Example Indonesia">
+                        </div>
+                        <div class="form-group">
+                            <label>Kota</label>
+                            <input type="text" name="kota" id="f_kota" placeholder="e.g. Jakarta">
+                        </div>
+                        <div class="form-group">
+                            <label>Provinsi</label>
+                            <input type="text" name="provinsi" id="f_provinsi" placeholder="e.g. DKI Jakarta">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Person</label>
+                            <input type="text" name="cp" id="f_cp" placeholder="e.g. Bpk. Andi">
+                        </div>
+                        <div class="form-group">
+                            <label>No Telepon</label>
+                            <input type="text" name="no_telepon" id="f_no_telepon" placeholder="e.g. 0812...">
+                        </div>
+                        <div class="form-group">
+                            <label>E-Mail</label>
+                            <input type="email" name="e_mail" id="f_e_mail" placeholder="e.g. info@example.com">
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Alamat Lengkap</label>
+                            <textarea name="alamat" id="f_alamat" rows="3" placeholder="Jl. Raya No. 123..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Kategori 1</label>
+                            <input type="text" name="categories_1" id="f_categories_1" placeholder="e.g. Industri">
+                        </div>
+                        <div class="form-group">
+                            <label>Kategori 2</label>
+                            <input type="text" name="categories_2" id="f_categories_2" placeholder="e.g. Farmasi">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" id="submitBtn" class="btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 By Kaisar Akhmad K. Confidential Information.</p>
+        </footer>
+    </div>
+
+    <script src="edit-client.js?v=4"></script>
+</body>
+</html>
