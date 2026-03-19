@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | ILI Database</title>
+    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .login-box h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .login-box .subtitle { margin-bottom: 2.5rem; }
+        .login-box .form-group { text-align: left; margin-bottom: 1.2rem; }
+        .login-box .form-group input { width: 100%; }
+        .login-error { color: #ef4444; font-size: 0.85rem; margin-top: 1rem; min-height: 1.2em; }
+        .login-success { color: #22c55e; font-size: 0.85rem; margin-top: 1rem; min-height: 1.2em; }
+        .login-footer { margin-top: 2rem; color: var(--text-muted); font-size: 0.8rem; }
+        .login-link { margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        .login-link a { color: var(--primary); text-decoration: none; }
+        .login-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="login-wrapper">
+        <div class="login-box glass">
+            <h1>Create <span style="color: var(--primary);">Account</span></h1>
+            <p class="subtitle">Request access to the portal</p>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regName" required placeholder="Your full name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" required minlength="6" placeholder="Min 6 characters">
+                </div>
+                <button type="submit" id="regBtn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Register</button>
+                <p class="login-error" id="regError"></p>
+                <p class="login-success" id="regSuccess"></p>
+            </form>
+
+            <p class="login-link">Already have an account? <a href="login.html">Sign In</a></p>
+            <p class="login-footer">&copy; 2026 By Kaisar Akhmad K.</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://sjbunfizoblfqyepnepw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqYnVuZml6b2JsZnF5ZXBuZXB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTk0MDQsImV4cCI6MjA4OTIzNTQwNH0.8cFfp4F-oVlB5nq2BHI0Q3lI4F-IwwBbUeS1xcRoexA';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const form = document.getElementById('registerForm');
+        const regBtn = document.getElementById('regBtn');
+        const regError = document.getElementById('regError');
+        const regSuccess = document.getElementById('regSuccess');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            regBtn.innerText = 'Registering...';
+            regBtn.disabled = true;
+            regError.innerText = '';
+            regSuccess.innerText = '';
+
+            const fullName = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            // Sign up the user with Supabase Auth
+            const { data, error } = await _supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { full_name: fullName }
+                }
+            });
+
+            if (error) {
+                regError.innerText = error.message;
+                regBtn.innerText = 'Register';
+                regBtn.disabled = false;
+                return;
+            }
+
+            // After signup, sign in to create the profile row
+            const { error: signInError } = await _supabase.auth.signInWithPassword({ email, password });
+            if (!signInError) {
+                // Insert profile with 'pending' status
+                await _supabase.from('user_profiles').insert([{
+                    id: data.user.id,
+                    email: email,
+                    full_name: fullName,
+                    status: 'pending'
+                }]);
+                await _supabase.auth.signOut();
+            }
+
+            regSuccess.innerText = '✅ Registration submitted! Please wait for admin approval before logging in.';
+            regBtn.innerText = 'Register';
+            regBtn.disabled = false;
+            form.reset();
+        });
+    </script>
+</body>
+</html>

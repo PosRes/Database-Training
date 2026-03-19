@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approval | ILI Database</title>
+    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .pending-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .pending-box {
+            width: 100%;
+            max-width: 480px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .pending-icon { font-size: 4rem; margin-bottom: 1.5rem; }
+        .pending-box h1 { font-size: 1.6rem; margin-bottom: 1rem; }
+        .pending-box p { color: var(--text-muted); line-height: 1.6; margin-bottom: 0.5rem; }
+        .pending-email { color: var(--primary); font-weight: 600; }
+        .rejected-msg { color: #ef4444; }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="pending-wrapper">
+        <div class="pending-box glass">
+            <div class="pending-icon" id="statusIcon">⏳</div>
+            <h1 id="statusTitle">Awaiting Approval</h1>
+            <p id="statusMessage">Your registration is being reviewed by the administrator. You'll be able to access the portal once your account is approved.</p>
+            <p id="statusEmail"></p>
+            <br>
+            <button onclick="handleLogout()" class="btn-secondary" style="margin-top: 1rem;">Sign Out</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://sjbunfizoblfqyepnepw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqYnVuZml6b2JsZnF5ZXBuZXB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTk0MDQsImV4cCI6MjA4OTIzNTQwNH0.8cFfp4F-oVlB5nq2BHI0Q3lI4F-IwwBbUeS1xcRoexA';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function checkStatus() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const { data: profile } = await _supabase
+                .from('user_profiles')
+                .select('status, email')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile) {
+                document.getElementById('statusEmail').innerHTML = 
+                    'Logged in as: <span class="pending-email">' + profile.email + '</span>';
+
+                if (profile.status === 'approved') {
+                    window.location.href = 'index.html';
+                } else if (profile.status === 'rejected') {
+                    document.getElementById('statusIcon').innerText = '❌';
+                    document.getElementById('statusTitle').innerText = 'Access Denied';
+                    document.getElementById('statusMessage').innerHTML = 
+                        '<span class="rejected-msg">Your registration has been rejected by the administrator.</span>';
+                }
+            }
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        checkStatus();
+    </script>
+</body>
+</html>

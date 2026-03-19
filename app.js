@@ -148,5 +148,12 @@ window.onclick = (event) => { if (event.target === modal) modal.style.display = 
 
 // Initial load — require auth first
 requireAuth().then(session => {
-    if (session) fetchClients();
+    if (session) {
+        fetchClients();
+        // Show admin link if user is admin
+        if (window._userRole === 'admin') {
+            const adminLink = document.getElementById('adminLink');
+            if (adminLink) adminLink.style.display = '';
+        }
+    }
 });
