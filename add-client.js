@@ -15,6 +15,21 @@ form.addEventListener('submit', async (e) => {
     const formData = new FormData(form);
     const clientData = Object.fromEntries(formData.entries());
 
+    // Format phone number to start with +62
+    if (clientData.no_telepon) {
+        let phone = clientData.no_telepon.replace(/\D/g, ''); // Remove non-numeric characters just in case
+        if (phone.startsWith('0')) {
+            phone = '62' + phone.substring(1);
+        } else if (phone.startsWith('8')) {
+            phone = '62' + phone;
+        } else if (phone.startsWith('62')) {
+            // Do nothing
+        } else {
+            phone = '62' + phone;
+        }
+        clientData.no_telepon = '+' + phone;
+    }
+
     try {
         const { error } = await _supabase
             .from('clients')

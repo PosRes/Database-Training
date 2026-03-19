@@ -58,7 +58,10 @@ function renderTable(clients) {
             <td><strong>${client.nama_institusi || '-'}</strong></td>
             <td>${client.kota || '-'}</td>
             <td>${client.provinsi || '-'}</td>
-            <td><span class="badge">${client.categories_1 || '-'}</span></td>
+            <td>
+                ${client.categories_1 ? `<span class="badge badge-primary">${client.categories_1}</span>` : '-'}
+                ${client.categories_2 ? `<span class="badge badge-secondary" style="margin-left:5px; opacity:0.8; font-size:0.8em; border:1px solid var(--glass-border); padding:2px 6px; border-radius:4px;">${client.categories_2}</span>` : ''}
+            </td>
             <td>${client.cp || '-'} / ${client.no_telepon || '-'}</td>
             <td><button class="btn-detail" onclick="showDetails(${client.id})">View</button></td>
         `;
@@ -77,8 +80,11 @@ searchInput.addEventListener('input', (e) => {
     const filtered = allClients.filter(c => 
         (c.nama_institusi && c.nama_institusi.toLowerCase().includes(term)) ||
         (c.kota && c.kota.toLowerCase().includes(term)) ||
+        (c.provinsi && c.provinsi.toLowerCase().includes(term)) ||
         (c.categories_1 && c.categories_1.toLowerCase().includes(term)) ||
-        (c.categories_2 && c.categories_2.toLowerCase().includes(term))
+        (c.categories_2 && c.categories_2.toLowerCase().includes(term)) ||
+        (c.cp && c.cp.toLowerCase().includes(term)) ||
+        (c.no_telepon && c.no_telepon.toLowerCase().includes(term))
     );
     renderTable(filtered);
 });
