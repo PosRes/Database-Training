@@ -23,20 +23,47 @@ async function fetchClients() {
     clientTableBody.innerHTML = '';
     
     try {
-        const { data, error } = await _supabase
+        // Get the REAL total count from the database
+        const { count: totalCount, error: countError } = await _supabase
             .from('clients')
-            .select('*')
-            .order('nama_institusi', { ascending: true });
+            .select('*', { count: 'exact', head: true });
 
-        if (error) throw error;
+        if (countError) throw countError;
 
-        allClients = data || [];
+        // Fetch ALL rows (Supabase defaults to 1000 max per request)
+        // We need to paginate if there are more than 1000
+        let allData = [];
+        const pageSize = 1000;
+        let from = 0;
+        let keepFetching = true;
+
+        while (keepFetching) {
+            const { data, error } = await _supabase
+                .from('clients')
+                .select('*')
+                .order('nama_institusi', { ascending: true })
+                .range(from, from + pageSize - 1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = allData.concat(data);
+                from += pageSize;
+            }
+            
+            // Stop when we get fewer rows than pageSize (last page)
+            if (!data || data.length < pageSize) {
+                keepFetching = false;
+            }
+        }
+
+        allClients = allData;
         
         if (allClients.length === 0) {
             loader.innerHTML = `<p style="color: var(--text-muted); text-align: center; width: 100%;">No data found in Cloud. Please import data to Supabase.</p>`;
         } else {
             renderTable(allClients);
-            updateStats(allClients);
+            updateStats(totalCount);
             loader.style.display = 'none';
         }
     } catch (err) {
@@ -69,9 +96,10 @@ function renderTable(clients) {
     });
 }
 
-function updateStats(clients) {
-    totalCountEl.innerText = clients.length;
-    const regions = new Set(clients.map(c => c.provinsi)).size;
+function updateStats(totalCount) {
+    // Use the real database count, not the JS array length
+    totalCountEl.innerText = totalCount;
+    const regions = new Set(allClients.map(c => c.provinsi).filter(Boolean)).size;
     activeRegionsEl.innerText = regions;
 }
 
