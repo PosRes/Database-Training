@@ -1,62 +1,114 @@
--- DEDUPLICATE CLIENTS TABLE
+-- =====================================================
+-- SMART DEDUPLICATION SCRIPT
+-- =====================================================
 -- Rules:
--- 1. Duplicates are identified by matching 'nama_institusi' (case-insensitive, trimmed)
--- 2. Keep the row with the MOST filled-in columns (most complete data)
--- 3. If both are equally complete, keep the one with the lowest ID (oldest entry)
+--   1. Two rows are "duplicates" if they share the same nama_institusi (case-insensitive)
+--      AND one of these is true:
+--        a) Both have the SAME cp + no_telepon
+--        b) One or both have NULL/empty cp AND no_telepon
+--   2. If nama_institusi AND cp+telepon are different → NOT a duplicate (different contacts)
+--   3. Among duplicates, KEEP the most complete row (most filled fields)
+--   4. If tied, keep the oldest (lowest ID)
+-- =====================================================
 
--- Step 1: Preview duplicates that WILL be deleted (run this first to check!)
-SELECT 
-  id,
-  nama_institusi,
-  kota,
-  provinsi,
-  cp,
-  no_telepon,
-  -- Count how many fields are filled in
-  (CASE WHEN nama_institusi IS NOT NULL AND nama_institusi != '' AND nama_institusi != '-' THEN 1 ELSE 0 END +
-   CASE WHEN alamat IS NOT NULL AND alamat != '' AND alamat != '-' THEN 1 ELSE 0 END +
-   CASE WHEN kota IS NOT NULL AND kota != '' AND kota != '-' THEN 1 ELSE 0 END +
-   CASE WHEN provinsi IS NOT NULL AND provinsi != '' AND provinsi != '-' THEN 1 ELSE 0 END +
-   CASE WHEN cp IS NOT NULL AND cp != '' AND cp != '-' THEN 1 ELSE 0 END +
-   CASE WHEN no_telepon IS NOT NULL AND no_telepon != '' AND no_telepon != '-' THEN 1 ELSE 0 END +
-   CASE WHEN e_mail IS NOT NULL AND e_mail != '' AND e_mail != '-' THEN 1 ELSE 0 END +
-   CASE WHEN categories_1 IS NOT NULL AND categories_1 != '' AND categories_1 != '-' THEN 1 ELSE 0 END +
-   CASE WHEN categories_2 IS NOT NULL AND categories_2 != '' AND categories_2 != '-' THEN 1 ELSE 0 END
-  ) AS filled_fields
-FROM clients
-WHERE id IN (
-  SELECT id FROM clients c1
-  WHERE EXISTS (
-    SELECT 1 FROM clients c2
-    WHERE LOWER(TRIM(COALESCE(c2.nama_institusi, ''))) = LOWER(TRIM(COALESCE(c1.nama_institusi, '')))
-      AND c2.id != c1.id
-  )
+-- =====================================================
+-- STEP 1: PREVIEW — See all duplicate groups (SAFE, no deletions)
+-- =====================================================
+WITH completeness AS (
+  SELECT
+    id,
+    nama_institusi,
+    kota,
+    provinsi,
+    cp,
+    no_telepon,
+    e_mail,
+    categories_1,
+    categories_2,
+    -- Score: count how many fields are meaningfully filled
+    (CASE WHEN COALESCE(NULLIF(TRIM(nama_institusi), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(alamat), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(kota), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(provinsi), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(cp), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(no_telepon), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(e_mail), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(categories_1), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(categories_2), ''), '-') != '-' THEN 1 ELSE 0 END
+    ) AS filled_fields
+  FROM clients
+),
+duplicates AS (
+  SELECT a.id
+  FROM completeness a
+  JOIN completeness b
+    ON a.id != b.id
+    -- Same institution name (case-insensitive, trimmed)
+    AND LOWER(TRIM(COALESCE(NULLIF(a.nama_institusi, ''), '~empty~')))
+      = LOWER(TRIM(COALESCE(NULLIF(b.nama_institusi, ''), '~empty~')))
+    -- AND same contact OR one/both contacts are null/empty
+    AND (
+      -- Both CP are null/empty/dash
+      (COALESCE(NULLIF(TRIM(a.cp), ''), '-') = '-' OR COALESCE(NULLIF(TRIM(b.cp), ''), '-') = '-')
+      OR
+      -- Same CP
+      LOWER(TRIM(a.cp)) = LOWER(TRIM(b.cp))
+    )
+    AND (
+      -- Both phone are null/empty/dash
+      (COALESCE(NULLIF(TRIM(a.no_telepon), ''), '-') = '-' OR COALESCE(NULLIF(TRIM(b.no_telepon), ''), '-') = '-')
+      OR
+      -- Same phone
+      LOWER(TRIM(a.no_telepon)) = LOWER(TRIM(b.no_telepon))
+    )
 )
-ORDER BY LOWER(TRIM(COALESCE(nama_institusi, ''))), filled_fields DESC, id;
+SELECT
+  c.id,
+  c.nama_institusi,
+  c.kota,
+  c.provinsi,
+  c.cp,
+  c.no_telepon,
+  c.filled_fields,
+  CASE WHEN c.id IN (SELECT id FROM duplicates) THEN '⚠ DUPLICATE' ELSE '' END AS status
+FROM completeness c
+WHERE c.id IN (SELECT id FROM duplicates)
+ORDER BY LOWER(TRIM(COALESCE(c.nama_institusi, ''))), c.filled_fields DESC, c.id;
 
--- Step 2: DELETE duplicates (keeping the most complete / oldest)
--- UNCOMMENT THE LINES BELOW AFTER YOU VERIFY STEP 1 LOOKS CORRECT
+
+-- =====================================================
+-- STEP 2: DELETE DUPLICATES
+-- Keeps the most complete row per group. If tied, keeps oldest (lowest ID).
+-- ⚠ UNCOMMENT THE BLOCK BELOW AFTER REVIEWING STEP 1
+-- =====================================================
 
 /*
 DELETE FROM clients
 WHERE id NOT IN (
-  SELECT DISTINCT ON (LOWER(TRIM(COALESCE(nama_institusi, ''))))
+  SELECT DISTINCT ON (
+    LOWER(TRIM(COALESCE(NULLIF(nama_institusi, ''), '~empty~'))),
+    -- Group by contact: use a normalized key
+    LOWER(TRIM(COALESCE(NULLIF(cp, ''), '~nocp~'))),
+    LOWER(TRIM(COALESCE(NULLIF(no_telepon, ''), '~nophone~')))
+  )
     id
   FROM clients
   ORDER BY
-    LOWER(TRIM(COALESCE(nama_institusi, ''))),
-    -- Prefer the row with the most filled-in fields
-    (CASE WHEN nama_institusi IS NOT NULL AND nama_institusi != '' AND nama_institusi != '-' THEN 1 ELSE 0 END +
-     CASE WHEN alamat IS NOT NULL AND alamat != '' AND alamat != '-' THEN 1 ELSE 0 END +
-     CASE WHEN kota IS NOT NULL AND kota != '' AND kota != '-' THEN 1 ELSE 0 END +
-     CASE WHEN provinsi IS NOT NULL AND provinsi != '' AND provinsi != '-' THEN 1 ELSE 0 END +
-     CASE WHEN cp IS NOT NULL AND cp != '' AND cp != '-' THEN 1 ELSE 0 END +
-     CASE WHEN no_telepon IS NOT NULL AND no_telepon != '' AND no_telepon != '-' THEN 1 ELSE 0 END +
-     CASE WHEN e_mail IS NOT NULL AND e_mail != '' AND e_mail != '-' THEN 1 ELSE 0 END +
-     CASE WHEN categories_1 IS NOT NULL AND categories_1 != '' AND categories_1 != '-' THEN 1 ELSE 0 END +
-     CASE WHEN categories_2 IS NOT NULL AND categories_2 != '' AND categories_2 != '-' THEN 1 ELSE 0 END
+    LOWER(TRIM(COALESCE(NULLIF(nama_institusi, ''), '~empty~'))),
+    LOWER(TRIM(COALESCE(NULLIF(cp, ''), '~nocp~'))),
+    LOWER(TRIM(COALESCE(NULLIF(no_telepon, ''), '~nophone~'))),
+    -- Most complete first
+    (CASE WHEN COALESCE(NULLIF(TRIM(nama_institusi), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(alamat), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(kota), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(provinsi), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(cp), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(no_telepon), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(e_mail), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(categories_1), ''), '-') != '-' THEN 1 ELSE 0 END +
+     CASE WHEN COALESCE(NULLIF(TRIM(categories_2), ''), '-') != '-' THEN 1 ELSE 0 END
     ) DESC,
-    -- If tie, keep the oldest (lowest ID)
+    -- Oldest first (tiebreaker)
     id ASC
 );
 */
